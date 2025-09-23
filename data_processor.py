@@ -10,8 +10,8 @@ def determine_trend(df: pd.DataFrame, fast_ma: int = 12, slow_ma: int = 26, side
     # Calculate the percentage difference between fast and slow MA
     ma_diff_pct = abs((df['fast_ma'].iloc[-1] - df['slow_ma'].iloc[-1]) / df['slow_ma'].iloc[-1]) * 100
     
-    print(f"Fast MA: {df['fast_ma'].iloc[-1]:.2f}, Slow MA: {df['slow_ma'].iloc[-1]:.2f}")  # Debugging output
-    print(f"MA Difference Percentage: {ma_diff_pct:.2f}%")  # Debugging output
+    logging.info(f"Fast MA: {df['fast_ma'].iloc[-1]:.2f}, Slow MA: {df['slow_ma'].iloc[-1]:.2f}")  # Debugging output
+    logging.info(f"MA Difference Percentage: {ma_diff_pct:.2f}%")  # Debugging output
     # Check for sideways market: MAs are close together
     if ma_diff_pct <= sideways_threshold:
         return "SIDEWAYS"

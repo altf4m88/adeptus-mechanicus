@@ -5,13 +5,28 @@
 
 import json
 import logging
+import re
 from time import sleep
 from bybit_tools import get_top_volume_symbols, servitor_fetch_market_data
 from data_processor import tech_priest_analyze_data
 from archmagos import archmagos_forge_signal
+from rich.logging import RichHandler
+from rich.panel import Panel
+from rich.json import JSON
+from rich import print as rich_print
+from rich.highlighter import Highlighter
 
-# Configure logging to record the machine spirit's thoughts
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+class SymbolHighlighter(Highlighter):
+    def highlight(self, text):
+        text.highlight_regex(r"(\w+USDT)", "bold cyan")
+
+# Configure logging to use Rich for beautiful output
+logging.basicConfig(
+    level="INFO",
+    format="%(message)s",
+    datefmt="[%X]",
+    handlers=[RichHandler(rich_tracebacks=True, show_path=False, highlighter=SymbolHighlighter())]
+)
 
 def run_adeptus_mechanicus_cycle(symbols_to_scout: list):
     """
@@ -22,7 +37,7 @@ def run_adeptus_mechanicus_cycle(symbols_to_scout: list):
 
     for symbol in symbols_to_scout:
         # 1. Servitor fetches data
-        market_data_df = servitor_fetch_market_data(symbol, 5, 200)
+        market_data_df = servitor_fetch_market_data(symbol, interval=5) # Set to 5m timeframe
 
         if market_data_df is None or market_data_df.empty:
             logging.warning(f"Could not proceed for {symbol}, data was not retrieved.")
@@ -38,18 +53,20 @@ def run_adeptus_mechanicus_cycle(symbols_to_scout: list):
             logging.info("Signal has been forged and is ready for the next stage.")
             # In a full system, you would now send this signal to the Magos
             # Strategos or Astra Militarum
-            print("\n--- PRIMARIS SIGNAL FORGED ---")
-            print(json.dumps(primaris_signal, indent=2))
-            print("----------------------------\n")
-        
-        sleep(3)
-        logging.info("=== MOVING ON TO NEXT COIN. ===")
+            json_data = json.dumps(primaris_signal, indent=2)
+            rich_print(Panel.fit(
+                JSON(json_data),
+                title=f"[bold green]PRIMARIS SIGNAL FORGED - {primaris_signal['symbol']}[/bold green]",
+                border_style="green"
+            ))
+        logging.info("=== MOVING ON TO NEXT SYMBOL ===")
+        logging.info("================================")
+        sleep(2)
 
-    logging.info("=== SCOUTING CYCLE COMPLETE. AWAITING NEXT DIRECTIVE. ===")
 
 if __name__ == "__main__":
     # 1. Servitor scouts for the top 50 symbols by volume
-    scouting_list = get_top_volume_symbols(limit=50)
+    scouting_list = get_top_volume_symbols(limit=100)
     print(f"Scouting List: {scouting_list}")
     
     if scouting_list:

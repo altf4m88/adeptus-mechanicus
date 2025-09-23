@@ -7,17 +7,50 @@ def archmagos_forge_signal(df: pd.DataFrame, analysis: dict, symbol: str) -> dic
     The Archmagos reviews the Tech-Priest's analysis and forges a
     Primaris-Signal if and only if all conditions of the sacred doctrine are met.
     """
+import pandas as pd
+import logging
+from rich.table import Table
+from rich import print as rich_print
+
+def archmagos_forge_signal(df: pd.DataFrame, analysis: dict, symbol: str) -> dict | None:
+    """
+    The Archmagos reviews the Tech-Priest's analysis and forges a
+    Primaris-Signal if and only if all conditions of the sacred doctrine are met.
+    """
     logging.info(f"Archmagos reviewing analysis for {symbol}...")
 
-    # Print essential columns for debugging
+    # --- Debug Printout using Rich Table ---
     try:
+        table = Table(title=f"--- Essential Data for {symbol} ---", border_style="blue")
         essential_cols = ['close', 'RSI_9', 'BBL_20_2.0_2.0', 'BBU_20_2.0_2.0', 'STOCHRSIk_14_9_3_3', 'STOCHRSId_14_9_3_3']
-        print(f"--- Essential Data for {symbol} ---")
-        print(df[essential_cols].tail(5))
-        print("-------------------------------------")
+        df_tail = df[essential_cols].tail(5)
+
+        for col in df_tail.columns:
+            table.add_column(col, justify="right")
+
+        for index, row in df_tail.iterrows():
+            row_values = []
+            for col_name, value in row.items():
+                style = ""
+                if col_name == 'RSI_9':
+                    if value > 70: style = "bold red"
+                    elif value < 30: style = "bold green"
+                elif col_name.startswith('STOCHRSI'):
+                    if value > 80: style = "bold red"
+                    elif value < 20: style = "bold green"
+                
+                if style:
+                    row_values.append(f"[{style}]{value:.2f}[/{style}]")
+                else:
+                    row_values.append(f"{value:.2f}")
+            table.add_row(*row_values)
+        
+        rich_print(table)
+
     except KeyError as e:
-        print(f"Debug Error: A column is missing from the DataFrame - {e}")
-        print("Available columns:", df.columns.tolist())
+        logging.error(f"Debug Error: A column is missing from the DataFrame - {e}")
+        logging.error(f"Available columns: {df.columns.tolist()}")
+    # --- End Debug Printout ---
 
     # Retrieve the last two data points for crossover detection
     last = df.iloc[-1]
@@ -69,7 +102,7 @@ def archmagos_forge_signal(df: pd.DataFrame, analysis: dict, symbol: str) -> dic
             "stoch_rsi_k": round(last['STOCHRSIk_14_9_3_3'], 2),
             "stoch_rsi_d": round(last['STOCHRSId_14_9_3_3'], 2),
             "bollinger_band": bollinger_band,
-            "volume_spike": analysis['volume_spike']
+            "volume_spike": bool(analysis['volume_spike'])
         },
         "suggested_volatility_profile": analysis['volatility']
     }

@@ -6,6 +6,8 @@
 import json
 import logging
 import re
+import schedule
+import time
 from time import sleep
 from bybit_tools import get_top_volume_symbols, servitor_fetch_market_data
 from data_processor import tech_priest_analyze_data
@@ -28,12 +30,19 @@ logging.basicConfig(
     handlers=[RichHandler(rich_tracebacks=True, show_path=False, highlighter=SymbolHighlighter())]
 )
 
-def run_adeptus_mechanicus_cycle(symbols_to_scout: list):
+def run_adeptus_mechanicus_cycle():
     """
     The main operational loop that orchestrates all units of the Adeptus
     Mechanicus.
     """
     logging.info("=== ADEPTUS MECHANICUS SCOUTING CYCLE INITIATED ===")
+    
+    # 1. Servitor scouts for the top symbols by volume
+    symbols_to_scout = get_top_volume_symbols(limit=100)
+    
+    if not symbols_to_scout:
+        logging.error("Could not retrieve scouting list. Skipping this cycle.")
+        return
 
     for symbol in symbols_to_scout:
         # 1. Servitor fetches data
@@ -62,16 +71,36 @@ def run_adeptus_mechanicus_cycle(symbols_to_scout: list):
         logging.info("=== MOVING ON TO NEXT SYMBOL ===")
         logging.info("================================")
         sleep(2)
+    
+    logging.info("=== ADEPTUS MECHANICUS CYCLE COMPLETED ===")
+
+
+def main():
+    """
+    Main function that sets up the scheduler and runs the Adeptus Mechanicus
+    """
+    logging.info("=== ADEPTUS MECHANICUS INITIALIZATION ===")
+    logging.info("Scheduling cycles to run every 5 minutes...")
+    
+    # Schedule the cycle to run every 5 minutes
+    schedule.every(5).minutes.do(run_adeptus_mechanicus_cycle)
+    
+    # Run the first cycle immediately
+    logging.info("Running initial cycle...")
+    run_adeptus_mechanicus_cycle()
+    
+    # Keep the script running and check for scheduled tasks
+    logging.info("Entering continuous operation mode...")
+    logging.info("Press Ctrl+C to terminate the Adeptus Mechanicus prospecting logic")
+    
+    try:
+        while True:
+            schedule.run_pending()
+            time.sleep(1)  # Check every second for pending jobs
+    except KeyboardInterrupt:
+        logging.info("=== ADEPTUS MECHANICUS SHUTDOWN SEQUENCE INITIATED ===")
+        logging.info("The Machine God's work is never done, but the servitors rest...")
 
 
 if __name__ == "__main__":
-    # 1. Servitor scouts for the top 50 symbols by volume
-    scouting_list = get_top_volume_symbols(limit=100)
-    print(f"Scouting List: {scouting_list}")
-    
-    if scouting_list:
-        # 2. Run the main cycle with the scouted symbols
-        run_adeptus_mechanicus_cycle(scouting_list)
-
-    else:
-        logging.error("Could not retrieve scouting list. Terminating directive.")
+    main()

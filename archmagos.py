@@ -1,14 +1,7 @@
-
 import pandas as pd
 import logging
-
-def archmagos_forge_signal(df: pd.DataFrame, analysis: dict, symbol: str) -> dict | None:
-    """
-    The Archmagos reviews the Tech-Priest's analysis and forges a
-    Primaris-Signal if and only if all conditions of the sacred doctrine are met.
-    """
-import pandas as pd
-import logging
+import os
+from datetime import datetime
 from rich.table import Table
 from rich import print as rich_print
 
@@ -16,6 +9,7 @@ def archmagos_forge_signal(df: pd.DataFrame, analysis: dict, symbol: str) -> dic
     """
     The Archmagos reviews the Tech-Priest's analysis and forges a
     Primaris-Signal if and only if all conditions of the sacred doctrine are met.
+    If a signal is found, it is recorded in a text file.
     """
     logging.info(f"Archmagos reviewing analysis for {symbol}...")
 
@@ -107,4 +101,30 @@ def archmagos_forge_signal(df: pd.DataFrame, analysis: dict, symbol: str) -> dic
         "suggested_volatility_profile": analysis['volatility']
     }
     
+    # --- Record the signal ---
+    try:
+        signals_dir = 'signals'
+        os.makedirs(signals_dir, exist_ok=True)
+        
+        date_str = datetime.now().strftime('%Y-%m-%d')
+        file_path = os.path.join(signals_dir, f"{date_str}_Primaris_Signal.txt")
+        
+        signal_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        signal_entry = f"--- Signal Found at {signal_time} for {signal['symbol']} ---"
+        signal_entry += f"Timestamp: {signal['timestamp']}"
+        signal_entry += f"Type: {signal['signal_type']}"
+        signal_entry += f"Trend Assessment: {signal['trend_assessment']}"
+        signal_entry += "Key Indicators:\n"
+        for key, value in signal['key_indicators'].items():
+            signal_entry += f"  - {key}: {value}\n"
+        signal_entry += f"Suggested Volatility Profile: {signal['suggested_volatility_profile']}\n"
+        signal_entry += "---\n\n"
+
+        with open(file_path, 'a') as f:
+            f.write(signal_entry)
+        logging.info(f"Successfully wrote signal to {file_path}")
+
+    except Exception as e:
+        logging.error(f"Error writing signal to file: {e}")
+
     return signal
